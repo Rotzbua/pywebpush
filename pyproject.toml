@@ -1,41 +1,60 @@
 [build-system]
-# This uses the semi-built-in "setuptools" which is currently the
-# python pariah, but there are a lot of behaviors that still carry.
-# For more info see https://packaging.python.org/en/latest/
-# (although, be fore-warned, it gets fairly wonky and obsessed with
-# details that you may not care about.)
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pywebpush"
 version = "2.3.0"
-requires-python = ">= 3.10"
+requires-python = ">=3.10"
 license = { text = "MPL-2.0" }
 authors = [{ name = "JR Conlin", email = "src+webpusher@jrconlin.com" }]
 description = "WebPush publication library"
 readme = "README.md"
 keywords = ["webpush", "vapid", "notification"]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
     "Topic :: Internet :: WWW/HTTP",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
 ]
-dynamic = ["dependencies"]
+dependencies = [
+    "aiohttp",
+    "cryptography>=2.6.1",
+    "http-ece>=1.1.0",
+    "requests>=2.21.0",
+    "py-vapid>=1.7.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/web-push-libs/pywebpush"
+Repository = "https://github.com/web-push-libs/pywebpush.git"
+Issues = "https://github.com/web-push-libs/pywebpush/issues"
 
 [project.optional-dependencies]
-dev = ["black", "mock", "pytest"]
+dev = [
+    "black",
+    "mock",
+    "pytest",
+    "pytest-cov",
+]
 
-# create the `pywebpush` helper using `python -m pip install --editable .`
 [project.scripts]
 pywebpush = "pywebpush.__main__:main"
 
-[tool.setuptools.dynamic]
-dependencies = { file = "requirements.txt" }
-
 [tool.setuptools.packages.find]
 include = ["pywebpush*"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=pywebpush"
+testpaths = ["pywebpush/tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
