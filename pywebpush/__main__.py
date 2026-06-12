@@ -1,12 +1,11 @@
 import argparse
-import os
 import json
 import logging
-import math
+from pathlib import Path
 
 from requests import JSONDecodeError
 
-from pywebpush import webpush, WebPushException
+from pywebpush import WebPushException, webpush
 
 
 def get_config():
@@ -40,10 +39,10 @@ def get_config():
 
     if not args.info:
         raise WebPushException("Subscription Info argument missing.")
-    if not os.path.exists(args.info):
+    if not Path(args.info).exists():
         raise WebPushException("Subscription Info file missing.")
     try:
-        with open(args.info) as r:
+        with Path.open(args.info) as r:
             try:
                 args.sub_info = json.loads(r.read())
             except JSONDecodeError as e:
@@ -51,10 +50,10 @@ def get_config():
                     "Could not read the subscription info file: {}", e
                 )
         if args.data:
-            with open(args.data) as r:
+            with Path.open(args.data) as r:
                 args.data = r.read()
         if args.head:
-            with open(args.head) as r:
+            with Path.open(args.head) as r:
                 try:
                     args.head = json.loads(r.read())
                 except JSONDecodeError as e:
@@ -71,7 +70,7 @@ def get_config():
         if args.claims:
             if not args.key:
                 raise WebPushException("No private --key specified for claims")
-            with open(args.claims) as r:
+            with Path.open(args.claims) as r:
                 try:
                     args.claims = json.loads(r.read())
                 except JSONDecodeError as e:
