@@ -1,23 +1,23 @@
 import base64
 import json
-import os
-import unittest
+import secrets
 import time
+import unittest
 from typing import cast
-from unittest.mock import patch, Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock, patch
 
 import http_ece
 import py_vapid
 import requests
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 
 from pywebpush import (
-    WebPusher,
-    NoData,
-    WebPushException,
     CaseInsensitiveDict,
+    NoData,
+    WebPusher,
+    WebPushException,
     webpush,
     webpush_async,
 )
@@ -38,7 +38,7 @@ class WebpushTestUtils(unittest.TestCase):
         return {
             "endpoint": endpoint,
             "keys": {
-                "auth": base64.urlsafe_b64encode(os.urandom(16)).strip(b"="),
+                "auth": base64.urlsafe_b64encode(secrets.token_bytes(16)).strip(b"="),
                 "p256dh": self._get_pubkey_str(recv_key),
             },
         }
@@ -170,8 +170,8 @@ class WebpushTestUtils(unittest.TestCase):
         pheaders = mock_post.call_args[1].get("headers")
         assert pheaders.get("ttl") == "0"
 
-        def repad(str):
-            return str + "===="[: len(str) % 4]
+        def repad(s):
+            return s + "===="[: len(s) % 4]
 
         auth = json.loads(
             base64.urlsafe_b64decode(
@@ -432,8 +432,8 @@ class WebPusherAsyncTestCase(WebpushTestUtils, unittest.IsolatedAsyncioTestCase)
         pheaders = mock_post.call_args[1].get("headers")
         assert pheaders.get("ttl") == "0"
 
-        def repad(str):
-            return str + "===="[: len(str) % 4]
+        def repad(s):
+            return s + "===="[: len(s) % 4]
 
         auth = json.loads(
             base64.urlsafe_b64decode(
@@ -578,9 +578,7 @@ class WebpushExceptionTestCase(unittest.TestCase):
         response.status_code = 401
         response.reason = "Unauthorized"
         exp = WebPushException("foo", response)
-        assert f"{exp}" == "WebPushException: foo, Response {}".format(
-            response.text
-        )
+        assert f"{exp}" == f"WebPushException: foo, Response {response.text}"
         assert f"{exp.response}", "<Response [401]>"
         assert cast(requests.Response, exp.response).json().get("errno") == 109
         exp = WebPushException("foo", [1, 2, 3])

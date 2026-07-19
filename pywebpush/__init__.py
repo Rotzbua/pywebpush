@@ -2,23 +2,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import asyncio
 import base64
 import json
-import os
-import time
 import logging
+import secrets
+import time
 from copy import deepcopy
-from typing import cast, Union, Dict
+from pathlib import Path
+from typing import cast
 from urllib.parse import urlparse
 
 import aiohttp
 import http_ece
 import requests
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
-from functools import partial
+from cryptography.hazmat.primitives.asymmetric import ec
 from py_vapid import Vapid, Vapid01
 from requests import Response
 
@@ -38,9 +37,7 @@ class WebPushException(Exception):
         extra = ""
         if self.response is not None:
             try:
-                extra = ", Response {}".format(
-                    self.response.text,
-                )
+                extra = f", Response {self.response.text}"
             except AttributeError:
                 extra = f", Response {self.response}"
         return f"WebPushException: {self.message}{extra}"
@@ -213,7 +210,7 @@ class WebPusher:
             )
         if content_encoding == "aesgcm":
             self.verb("Generating salt for aesgcm...")
-            salt = os.urandom(16)
+            salt = secrets.token_bytes(16)
             logging.debug(f"Salt: {salt}")
         # The server key is an ephemeral ECDH key used only for this
         # transaction
@@ -269,8 +266,7 @@ class WebPusher:
         ]
         data = ""
         if encoded_data:
-            with open("encrypted.data", "wb") as f:
-                f.write(encoded_data)
+            Path("encrypted.data").write_bytes(encoded_data)
             data = "--data-binary @encrypted.data"
         if "content-length" not in headers:
             self.verb("Generating content-length header...")
@@ -467,14 +463,14 @@ def webpush(
             # encryption lives for 12 hours
             vapid_claims["exp"] = int(time.time()) + (12 * 60 * 60)
             if verbose:
-                logging.info("Setting VAPID expry to {}...".format(vapid_claims["exp"]))
+                logging.info("Setting VAPID expiry to {}...".format(vapid_claims["exp"]))
         if not vapid_private_key:
             raise WebPushException("VAPID dict missing 'private_key'")
         if isinstance(vapid_private_key, Vapid01):
             if verbose:
                 logging.info("Looks like we already have a valid VAPID key")
             vv = vapid_private_key
-        elif os.path.isfile(vapid_private_key):
+        elif Path(vapid_private_key).is_file():
             # Presume that key from file is handled correctly by
             # py_vapid.
             if verbose:
@@ -504,9 +500,7 @@ def webpush(
     if not curl and cast(Response, response).status_code > 202:
         response = cast(Response, response)
         raise WebPushException(
-            "Push failed: {} {}\nResponse body:{}".format(
-                response.status_code, response.reason, response.text
-            ),
+            f"Push failed: {response.status_code} {response.reason}\nResponse body:{response.text}",
             response=response,
         )
     return response
@@ -601,7 +595,7 @@ async def webpush_async(
             if verbose:
                 logging.info("Looks like we already have a valid VAPID key")
             vv = vapid_private_key
-        elif os.path.isfile(vapid_private_key):
+        elif Path(vapid_private_key).is_file():
             # Presume that key from file is handled correctly by
             # py_vapid.
             if verbose:
@@ -632,9 +626,7 @@ async def webpush_async(
         response = cast(aiohttp.ClientResponse, response)
         response_text = await response.text()
         raise WebPushException(
-            "Push failed: {} {}\nResponse body:{}".format(
-                response.status, response.reason, response_text
-            ),
+            f"Push failed: {response.status} {response.reason}\nResponse body:{response_text}",
             response=response,
         )
     return response
